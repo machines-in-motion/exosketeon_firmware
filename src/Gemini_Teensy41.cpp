@@ -9,47 +9,6 @@ Gemini_Teensy41::Gemini_Teensy41(uint32_t id, int Can_id, double Gear_ratio, uin
 void Gemini_Teensy41::init_motor()
 {
 // ***************** read and set PID for position/velocity/speed parameters *****************//
-//  read_PID();
-//  delay(100);
-//  receive_CAN_data();
-//  delay(100);
-//
-//  Serial.print(anglePidKp);
-//  Serial.print("  ");
-//  Serial.print(anglePidKi);
-//  Serial.print("  ");
-//  Serial.print(speedPidKp);
-//  Serial.print("  ");
-//  Serial.print(speedPidKi);
-//  Serial.print("  ");
-//  Serial.print(iqPidKp);
-//  Serial.print("  ");
-//  Serial.println(iqPidKi);
-
-//  anglePidKp = 50;//50 is the default value, 0~255; change Kp to 200 can make it faster
-//  anglePidKi = 50;//50 is the default value, 0~255; add a large KI will cause huge vibration
-//  speedPidKp = 100;//100 is the default value, 0~255; no obvious difference to increase Kp, it limited by motor acceleration and speed
-//  speedPidKi = 5;//5 is the default value, 0~255; add a large KI will cause huge vibration
-//  iqPidKp = 100;//100 is the default value, 0~255;
-//  iqPidKi = 0;//0 is the default value, 0~255; add KI will cause huge vibration
-
-//  write_PID_ROM();
-//  delay(100);
-//  receive_CAN_data();
-//  delay(100);
-
-//  Serial.print(anglePidKp);
-//  Serial.print("  ");
-//  Serial.print(anglePidKi);
-//  Serial.print("  ");
-//  Serial.print(speedPidKp);
-//  Serial.print("  ");
-//  Serial.print(speedPidKi);
-//  Serial.print("  ");
-//  Serial.print(iqPidKp);
-//  Serial.print("  ");
-//  Serial.println(iqPidKi);
-
   send_current_command(0);
   delay(100);
   receive_CAN_data();
