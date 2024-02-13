@@ -46,8 +46,8 @@ class MyNode(rclpy.node.Node):
         amp = 0.5
         des_pos = amp * np.pi * np.sin(2 * np.pi*self.counter/freq)
         des_vel = (1/freq)*2 * np.pi* amp * np.pi * np.sin(2 * np.pi*self.counter/freq)
-        msg.data = int(2500 * (des_pos - self.motor_position[0]) + 35 * (des_vel  - self.motor_velocity[0]))
-        # self.publisher.publish(msg)
+        msg.data = 300#int(2500 * (des_pos - self.motor_position[0]) + 35 * (des_vel  - self.motor_velocity[0]))
+        self.publisher.publish(msg)
         # self.get_logger().info(f"Publishing: {msg.data}")
         self.counter += 1
 

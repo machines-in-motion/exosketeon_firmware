@@ -75,6 +75,13 @@ void Gemini_Teensy41::DataExplanation(CAN_message_t msgR2)
         motorAngle = motorAngle_raw - motorAngle_offset;
         break;
 
+      case 0x94: //9: read single-turn motorAngle
+
+        motorAngle_int32 = (int16_t)( ((uint16_t)msgR2.buf[7] << 8) | ((uint16_t)msgR2.buf[6] )) ;
+        motorAngle_raw = ((double) motorAngle_int32);
+        motorAngleSingleTurn = M_PI*(motorAngle_raw/36000);
+        break;
+
       case 0xA1: //19: send current command and return temperature, iq, speed, encoder
         temperature = (int8_t)msgR2.buf[1];
         iq = (int16_t)(((uint16_t)msgR2.buf[3] << 8) | ((uint16_t)msgR2.buf[2]));
@@ -234,6 +241,23 @@ void Gemini_Teensy41::read_multi_turns_angle()
   msgW.id = 0x140 + ID;
   msgW.len = 8;
   msgW.buf[0] = 0x92;
+  msgW.buf[1] = 0;
+  msgW.buf[2] = 0;
+  msgW.buf[3] = 0;
+  msgW.buf[4] = 0;
+  msgW.buf[5] = 0;
+  msgW.buf[6] = 0;
+  msgW.buf[7] = 0;
+  Can3.write(msgW);
+  //delay(1);
+  //receive_CAN_data();
+}
+
+void Gemini_Teensy41::read_single_turns_angle()
+{
+  msgW.id = 0x140 + ID;
+  msgW.len = 8;
+  msgW.buf[0] = 0x94;
   msgW.buf[1] = 0;
   msgW.buf[2] = 0;
   msgW.buf[3] = 0;

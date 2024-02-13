@@ -1,6 +1,7 @@
 
 #include <FlexCAN_T4.h>
 #include <Arduino.h>
+#include <math.h>
 
 #define profile_position_control_mode 6
 #define position_control_mode 3
@@ -41,6 +42,7 @@ class Gemini_Teensy41
     uint16_t encoderRaw = 0;
     uint16_t encoderOffset = 0;
     double motorAngle = 0;
+    double motorAngleSingleTurn = 0;
     double motorAngle_offset = 0;
     double motorAngle_raw = 0;
     int64_t motorAngle_int64 = 0;
@@ -61,6 +63,7 @@ class Gemini_Teensy41
     void read_acceleration();
     void write_acceleration_RAM();
     void read_multi_turns_angle();
+    void read_single_turns_angle();
     void send_current_command(double current);
     void send_speed_command(double speedvalue);
     void send_position_command(double angle);

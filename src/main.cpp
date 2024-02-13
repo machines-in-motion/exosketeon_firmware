@@ -66,7 +66,7 @@ geometry_msgs__msg__WrenchStamped wrench_msg;
 // In order to reduce this rebuild the library with
 // - RMW_UXRCE_ENTITY_CREATION_DESTROY_TIMEOUT=0
 // - UCLIENT_MAX_SESSION_CONNECTION_ATTEMPTS=3
-int32_t motor_cmd = 0;
+volatile int32_t motor_cmd = 0;
 
 
 // Use Teensy SDIO
@@ -77,7 +77,7 @@ int32_t motor_cmd = 0;
 #define LOG_FILENAME "Log_file.csv"
 
 /*Canbus Setup*/
-FlexCAN_T4<CAN2, RX_SIZE_256, TX_SIZE_16> Can3;
+FlexCAN_T4<CAN3, RX_SIZE_256, TX_SIZE_16> Can3;
 CAN_message_t msgR;
 /*Canbus Setup*/
 
@@ -215,7 +215,7 @@ void initial_CAN()
   //pinMode(28, OUTPUT);
   //digitalWrite(28, LOW);
   delay(500);
-  Serial.println("Can bus setup done...");
+  // Serial.println("Can bus setup done...");
   delay(500);
 }
 
@@ -226,7 +226,7 @@ void setup()
   Serial.begin(115200);  //used for communication with computer.
   set_microros_serial_transports(Serial);
   delay(2000);
-  Serial5.begin(115200); //used to communication with bluetooth peripheral. Teensy->RS232->Adafruit Feather nRF52840 Express(peripheral)
+  // Serial5.begin(115200); //used to communication with bluetooth peripheral. Teensy->RS232->Adafruit Feather nRF52840 Express(peripheral)
    
   initial_CAN();
   delay(100);
@@ -350,15 +350,14 @@ void CurrentControl()
   //********* use to control the teensy controller frequency **********//
   if (current_time - previous_time > Tinterval_microsecond) // check if the time period of control loop is already larger than Sample period of control loop (Tinterval_microsecond)
   {
-    if (Stop_button) //stop
-    {
-      Serial.println("In STOP ...");
-      assist_mode = 3;
-    }
-    else if (are_joint_limits_exceeded()){
-      Serial.println("Joint Limits exceeded ...");
-      assist_mode = 1;
-    }
+    // if (Stop_button) //stop
+    // {
+    //   // Serial.println("In STOP ...");
+    // }
+    // // else if (are_joint_limits_exceeded()){
+    // //   Serial.println("Joint Limits exceeded ...");
+    // //   assist_mode = 1;
+    // // }
 
     Compute_Cur_Commands();
     Cur_limitation();
@@ -369,27 +368,26 @@ void CurrentControl()
     motor_state->header.stamp.nanosec = time_nano;
     motor_state->header.stamp.sec = time_sec;
     
-    motor_state->position.data[0]= m1.motorAngle;
-    motor_state->position.data[1]= m2.motorAngle;
+    motor_state->position.data[0]= m1.motorAngleSingleTurn;
+    motor_state->position.data[1]= m2.motorAngleSingleTurn;
 
     motor_state->velocity.data[0]= m1.speed_value;
     motor_state->velocity.data[1]= m2.speed_value;
   
     rcl_publish(&state_publisher, &motor_state, NULL);
-
     m1.send_current_command(Cur_command_L);
     m1.receive_CAN_data();
     delay(1);
     
-    m1.read_multi_turns_angle(); //read angle and angular velocity
+    m1.read_single_turns_angle(); //read angle and angular velocity
     m1.receive_CAN_data();
     delay(1);
     
-    // m2.send_current_command(Cur_command_R);
-    // m2.receive_CAN_data();
+    m2.send_current_command(Cur_command_R);
+    m2.receive_CAN_data();
     delay(1);
 
-    m2.read_multi_turns_angle(); //read angle and angular velocity
+    m2.read_single_turns_angle(); //read angle and angular velocity
     m2.receive_CAN_data();
     delay(1);
     
