@@ -1,69 +1,67 @@
-## Example of PD controller for a single motor
-
-import rclpy
-from rclpy.node import Node
-from std_msgs.msg import Int32, Float64
-from geometry_msgs.msg import WrenchStamped
-from sensor_msgs.msg import JointState
-
 import numpy as np
+import time
+from interface import ExoSkeletonUDPInterface
+import matplotlib.pyplot as plt
 
+interface = ExoSkeletonUDPInterface()
 
-class MyNode(rclpy.node.Node):
+P = 0.5
+D = 0.01
+T = 5000
+DT = 0.001
+q_des = -2.5
+time_init = time.time()
 
-    def __init__(self):
-        super().__init__('odri2')
-        
-        # Create a publisher
-        self.publisher = self.create_publisher(Int32, 'motor_cmd1', 10)
-        
-        # Create a subscriber
-        self.subscription = self.create_subscription(
-            JointState,
-            'motor_state',
-            self.callback,
-            10)
-        self.subscription  
+counter = 0
+interface.setCommand([0.], [0.], [0.], [0.0], [0.0], [0.])
+time.sleep(0.01)
+state = interface.getState()
+if state is not None:
+    data = interface.getState()
+    q_init = data['q']
 
-        # A counter for demonstration purposes
-        self.counter = 0
+recorded = np.zeros((T,2))
+flag = 1
+while flag == 1:
+    time.sleep(0.001)
+    state = interface.getState()
+    if state is not None:
+        data = interface.getState()
+        q_motor = data['q']
+        dq_motor  = data['dq']
+        # reset
+        torque = 1.0  #+ 10*D * (0.5 - dq_motor)
 
-        # Create a timer to publish messages periodically
-        self.timer = self.create_timer(0.001, self.timer_callback)
+        if (dq_motor < 0.005):
+            counter += 1
+        # if counter > 1000:
+            # torque = 0.0
+            q_offset = q_motor
+            # flag = 0
+        interface.setCommand([0], [0.], [0], [0], [torque], [0.])
 
-        self.motor_position = np.zeros(2)
-        self.motor_velocity = np.zeros(2)
+    else:
+        print('No response received from the leg. Check the network.')
 
-    def callback(self, msg):
-        # self.get_logger().info('I heard joint : "%s"' % msg.wrench.torque.z)
-        self.motor_position = np.array(msg.position)
-        print(self.motor_position)
-        self.motor_velocity = np.array(msg.velocity)
+interface.setCommand([0], [0.], [0], [0], [0.0], [0.])
+print("finished calibrating...")
 
-    def timer_callback(self):
-        msg = Int32()
-        freq = 10000
-        amp = 0.5
-        des_pos = amp * np.pi * np.sin(2 * np.pi*self.counter/freq)
-        des_vel = (1/freq)*2 * np.pi* amp * np.pi * np.sin(2 * np.pi*self.counter/freq)
-        msg.data = 300#int(2500 * (des_pos - self.motor_position[0]) + 35 * (des_vel  - self.motor_velocity[0]))
-        self.publisher.publish(msg)
-        # self.get_logger().info(f"Publishing: {msg.data}")
-        self.counter += 1
+# while True:
+#     time.sleep(0.001)
+#     state = interface.getState()
+#     if state is not None:
+#         data = interface.getState()
+#         q_motor = data['q'] - q_offset
+#         dq_motor  = data['dq']
+#         torque = max(P * (min(q_des, 0) - q_motor) + D * (-dq_motor), 0) 
+#         # print(q_motor, torque)
+#         interface.setCommand([0], [0.], [0], [0], [torque], [0.])
+#     else:
+#         print('No response received from the leg. Check the network.')
 
+# interface.setCommand([0.], [0.], [0.], [0.0], [0.0], [0.])
 
-def main(args=None):
-    rclpy.init(args=args)
-
-    my_node = MyNode()
-
-    try:
-        rclpy.spin(my_node)
-    except KeyboardInterrupt:
-        pass
-
-    my_node.destroy_node()
-    rclpy.shutdown()
-
-if __name__ == '__main__':
-    main()
+# plt.plot(recorded[:,0])
+# plt.plot(recorded[:,1])
+# plt.legend()
+# plt.show()
