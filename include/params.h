@@ -7,7 +7,7 @@
 #define KNEE_DAMPING_CONSTANT 0.02
 
 #define KNEE_ACTUATOR_IDX 0
-#define MAX_MOTOR_CURRENT 6.0 // max cuurent in the motor
+#define MAX_MOTOR_TORQUE 6.0 // max torque in the motor
 
 #define CONTROL_FREQUENCY 1000
 #define SAFETY_COUNTER_LIMIT 100 // max number of times a message is missed before which safety controller is called

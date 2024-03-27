@@ -35,14 +35,14 @@ float computePD(JointCmd_t cmd, JointState_t state)
   float dq_des = cmd.dq_des;//(A/T)*cos(millis()/T);
   // compute the contrl law (note that the unit of u is in amps)
   double u = kp*(q_des - cmd.q_offset - state.q) + kv*(dq_des - state.dq) + cmd.tau_ff;
-  u = std::max(-MAX_MOTOR_CURRENT, std::min(u, MAX_MOTOR_CURRENT));
+  u = std::max(-MAX_MOTOR_TORQUE, std::min(u, MAX_MOTOR_TORQUE));
   return u;
 }
 
 float computeDampingCommand(JointState_t state, float damping_constant)
 {
   double u = damping_constant*(0 - state.dq);
-  u = std::max(-MAX_MOTOR_CURRENT, std::min(u, MAX_MOTOR_CURRENT));
+  u = std::max(-MAX_MOTOR_TORQUE, std::min(u, MAX_MOTOR_TORQUE));
   return u;
 }
 

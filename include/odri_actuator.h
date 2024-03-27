@@ -17,7 +17,8 @@
 #define AMPLIFICATION_GAIN            9.14
 #define RSHUNT                        0.003
 #define CURRENT_CONV_FACTOR		(uint16_t)((65536.0 * RSHUNT * AMPLIFICATION_GAIN)/ADC_REFERENCE_VOLTAGE)
-
+#define MOTOR_CONSTANT 1.44 // identified with test
+#define GEAR_RATIO 9
 
 
 // Define the type required for holding the responses from the actuators 
@@ -77,12 +78,12 @@ class ODRI2ActuatorManager
       for ( uint8_t i = 0; i < msg.len; i++ ) 
           _response.buffer[i] = msg.buf[i];
 
-        _actuators_states[msg.id].q = _response.data.q;
-        _actuators_states[msg.id].dq = ((float)_response.data.q_dot/32700.) *Q_DOT_MAX;
+        _actuators_states[msg.id].q = (_response.data.q)/GEAR_RATIO;
+        _actuators_states[msg.id].dq = (((float)_response.data.q_dot/32700.) *Q_DOT_MAX)/GEAR_RATIO;
         _actuators_states[msg.id].tau_est = _response.data.tau; //TODO: covert to the non-raw version
     }
 
-    CAN_message_t command2Message(uint16_t id, float current)
+    CAN_message_t command2Message(uint16_t id, float torque)
     {
       
       CAN_message_t _msg;
@@ -90,7 +91,7 @@ class ODRI2ActuatorManager
         float current;
         uint8_t buff[4];
       }cmd;
-      cmd.current = current;
+      cmd.current = torque/MOTOR_CONSTANT;
       _msg.buf[0] =   cmd.buff[0];
       _msg.buf[1] =   cmd.buff[1];
       _msg.buf[2] =   cmd.buff[2];
