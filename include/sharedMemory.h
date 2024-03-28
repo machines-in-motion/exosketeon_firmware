@@ -18,7 +18,8 @@ struct JointState
     float dq;
     float tau_est;
     float temp;
-    float q_absolute;
+    float motor_q;
+    float motor_dq;
 };
 
 typedef struct JointCmd JointCmd_t;

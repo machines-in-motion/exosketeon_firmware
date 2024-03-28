@@ -45,14 +45,15 @@ class ExoSkeletonUDPInterface():
             data = self.socket.recvmsg(4096)
             # breakpoint()
             if data[0][0] == MOTION_STATE:
-                msg_format=f'{self.num_actuators*5}f'
+                msg_format=f'{self.num_actuators*6}f'
                 data = struct.unpack(msg_format, data[0][1:])
-                state = np.array(data).reshape(self.num_actuators, 5)  
+                state = np.array(data).reshape(self.num_actuators, 6)  
                 self.state={'q': state[:,0],
                             'dq': state[:,1],
                             'current': state[:,2],
                             'temp': state[:,3],
-                            'q_absolute': state[:,4]}
+                            'motor_q': state[:,4],
+                            'motor_dq': state[:,5]}
                 self.latest_state_stamp = time.time()
             else:
                 print("invalid motion response")

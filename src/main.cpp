@@ -27,21 +27,21 @@ void can2Callback(const CAN_message_t &msg) {
   actuator_manager.decodeResponse(msg);
 }
 
-float computePD(JointCmd_t cmd, JointState_t state)
+float computePD(const JointCmd_t cmd, const JointState_t state)
 {
   float kp = cmd.kp;
   float kv = cmd.kv;
   float q_des = cmd.q_des;// A*sin(millis()/T);
   float dq_des = cmd.dq_des;//(A/T)*cos(millis()/T);
   // compute the contrl law (note that the unit of u is in amps)
-  double u = kp*(q_des - cmd.q_offset - state.q) + kv*(dq_des - state.dq) + cmd.tau_ff;
+  double u = kp*(q_des - cmd.q_offset - state.motor_q) + kv*(dq_des - state.motor_dq) + cmd.tau_ff;
   u = std::max(-MAX_MOTOR_TORQUE, std::min(u, MAX_MOTOR_TORQUE));
   return u;
 }
 
-float computeDampingCommand(JointState_t state, float damping_constant)
+float computeDampingCommand(const JointState_t state, const float damping_constant)
 {
-  double u = damping_constant*(0 - state.dq);
+  double u = damping_constant*(0 - state.motor_dq);
   u = std::max(-MAX_MOTOR_TORQUE, std::min(u, MAX_MOTOR_TORQUE));
   return u;
 }
@@ -50,17 +50,32 @@ void check_safety( const ActuatorState_t state){
   if((millis() - latest_cmd_stamp) > SAFETY_COUNTER_LIMIT && recieved_first_command){
     actuator_mode = 0;
   }
+  if((state.q) > MAX_JOINT_LIMIT || MIN_JOINT_LIMIT > state.q){
+    actuator_mode = 0;
+  }
   else{
     actuator_mode = 1;
   }
+}
+
+const float compute_exoskeleton_joint_angle(const float motor_angle){
+  return forward_kinematics[0]*std::pow(motor_angle,5) + forward_kinematics[1]*std::pow(motor_angle,4) + forward_kinematics[2]*std::pow(motor_angle,3) 
+          + forward_kinematics[3]*std::pow(motor_angle,2) + forward_kinematics[4]*std::pow(motor_angle,1) + forward_kinematics[5];
+}
+
+const float compute_exoskeleton_joint_velocity(const float motor_angle, const float motor_velocity){
+  return (jacobian[0]*std::pow(motor_angle,4) + jacobian[1]*std::pow(motor_angle,3) + jacobian[2]*std::pow(motor_angle,2) 
+          + jacobian[3]*std::pow(motor_angle,1) + jacobian[4])*motor_velocity;
 }
 
 // callback that runs priodically every 1ms 
 void daqLoopCallback(void)
 {
   const ActuatorState_t state = actuator_manager.getLatestState(KNEE_ACTUATOR_ID);
-  shm_state.data[KNEE_ACTUATOR_IDX].q = state.q;
-  shm_state.data[KNEE_ACTUATOR_IDX].dq = state.dq;
+  shm_state.data[KNEE_ACTUATOR_IDX].motor_q = state.q;
+  shm_state.data[KNEE_ACTUATOR_IDX].motor_dq = state.dq;
+  shm_state.data[KNEE_ACTUATOR_IDX].q = compute_exoskeleton_joint_angle(state.q);
+  shm_state.data[KNEE_ACTUATOR_IDX].dq = compute_exoskeleton_joint_velocity(state.q, state.dq);
   check_safety(state);
   // compute the internal PD
   switch(actuator_mode){
@@ -73,7 +88,7 @@ void daqLoopCallback(void)
     }
     case SAFETY_MODE:
     {
-      double u = computeDampingCommand(shm_state.data[KNEE_ACTUATOR_IDX], KNEE_DAMPING_CONSTANT);
+      double u = computeDampingCommand(shm_state.data[KNEE_ACTUATOR_IDX], MOTOR_DAMPING_CONSTANT);
       auto msg = actuator_manager.command2Message(KNEE_ACTUATOR_ID, u);
       Can2.write(msg);
       break;
