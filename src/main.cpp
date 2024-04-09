@@ -31,10 +31,11 @@ float computePD(const JointCmd_t cmd, const JointState_t state)
 {
   float kp = cmd.kp;
   float kv = cmd.kv;
-  float q_des = cmd.q_des;// A*sin(millis()/T);
-  float dq_des = cmd.dq_des;//(A/T)*cos(millis()/T);
+  float q_des = cmd.q_des;
+  float dq_des = cmd.dq_des;
+
   // compute the contrl law (note that the unit of u is in amps)
-  double u = kp*(q_des - cmd.q_offset - state.motor_q) + kv*(dq_des - state.motor_dq) + cmd.tau_ff;
+  double u = kp*(q_des  - state.motor_q) + kv*(dq_des - state.motor_dq) + cmd.tau_ff;
   u = std::max(-MAX_MOTOR_TORQUE, std::min(u, MAX_MOTOR_TORQUE));
   return u;
 }
@@ -47,10 +48,11 @@ float computeDampingCommand(const JointState_t state, const float damping_consta
 }
 
 void check_safety( const ActuatorState_t state){
-  if((millis() - latest_cmd_stamp) > SAFETY_COUNTER_LIMIT && recieved_first_command){
+  if((millis() - latest_cmd_stamp) > SAFETY_COUNTER_LIMIT){
     actuator_mode = 0;
+
   }
-  if((state.q) > MAX_JOINT_LIMIT || MIN_JOINT_LIMIT > state.q){
+  if((state.q) > MAX_JOINT_LIMIT || MIN_JOINT_LIMIT > (state.q)){
     actuator_mode = 0;
   }
   else{
@@ -72,10 +74,11 @@ const float compute_exoskeleton_joint_velocity(const float motor_angle, const fl
 void daqLoopCallback(void)
 {
   const ActuatorState_t state = actuator_manager.getLatestState(KNEE_ACTUATOR_ID);
-  shm_state.data[KNEE_ACTUATOR_IDX].motor_q = state.q;
+  const JointCmd_t cmd = shm_cmd.data[KNEE_ACTUATOR_IDX];
+  shm_state.data[KNEE_ACTUATOR_IDX].motor_q = state.q - cmd.q_offset;
   shm_state.data[KNEE_ACTUATOR_IDX].motor_dq = state.dq;
-  shm_state.data[KNEE_ACTUATOR_IDX].q = compute_exoskeleton_joint_angle(state.q);
-  shm_state.data[KNEE_ACTUATOR_IDX].dq = compute_exoskeleton_joint_velocity(state.q, state.dq);
+  shm_state.data[KNEE_ACTUATOR_IDX].q = compute_exoskeleton_joint_angle(shm_state.data[KNEE_ACTUATOR_IDX].motor_q);
+  shm_state.data[KNEE_ACTUATOR_IDX].dq = compute_exoskeleton_joint_velocity(shm_state.data[KNEE_ACTUATOR_IDX].motor_q, shm_state.data[KNEE_ACTUATOR_IDX].motor_dq);
   check_safety(state);
   // compute the internal PD
   switch(actuator_mode){
@@ -106,10 +109,14 @@ void setup() {
   // Initialize the shared memory
   for(int i=0; i<NUM_ACTUATORS; i++)
   {
+    shm_cmd.data[i].q_des=0.;
+    shm_cmd.data[i].dq_des=0.;
     shm_cmd.data[i].kp=0.;
     shm_cmd.data[i].kv=0.;
-    shm_cmd.data[i].dq_des=0.;
-    shm_cmd.data[i].dq_des=0.;
+    shm_cmd.data[i].tau_ff=0.;
+    shm_cmd.data[i].q_offset=0.;
+
+
     shm_state.data[i].q = 0.;
     shm_state.data[i].dq = 0.;
   }
@@ -148,7 +155,12 @@ uint8_t udp_cmd_buffer[128];
 void loop() {
   int packetSize = Udp.parsePacket();
   if (packetSize) {
-    Udp.read(udp_cmd_buffer, UDP_TX_PACKET_MAX_SIZE);
+    Udp.read(udp_cmd_buffer, packetSize);
+    for(unsigned i = 0; i < packetSize; i++){
+      Serial.print(udp_cmd_buffer[i]); Serial.print(" ; ");
+    }
+    Serial.println();
+
     switch(udp_cmd_buffer[0])
     {
       case MOTION_CMD:
@@ -161,7 +173,6 @@ void loop() {
           Udp.write(&MOTION_STATE, 1);
           Udp.write(shm_state.buffer, sizeof(shm_state.buffer));
           Udp.endPacket();
-          // Serial.println("A valid motion command was received");
         }
         break;
       }

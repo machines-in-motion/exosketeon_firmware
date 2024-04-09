@@ -4,11 +4,11 @@
 #include <NativeEthernetUdp.h>
 
 #define KNEE_ACTUATOR_ID 0x123
-#define MOTOR_DAMPING_CONSTANT 0.2
+#define MOTOR_DAMPING_CONSTANT 0.1
 
 #define KNEE_ACTUATOR_IDX 0
 #define MAX_MOTOR_TORQUE 6.0 // max torque in the motor
-#define MAX_JOINT_LIMIT 0 // max angle in the motor
+#define MAX_JOINT_LIMIT 1.6 //0 // max angle in the motor
 #define MIN_JOINT_LIMIT -1.6 // min angle in the motor
 
 

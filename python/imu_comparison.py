@@ -40,31 +40,31 @@ def update_frame(name, vis, R, offset = np.zeros(3)):
 
 
 
-micro_imu1 = IMU.Imu3DM_GX3_45("/dev/ttyACM5", True)
-micro_imu1.initialize()
-add_frame("1", vis)
-micro_imu2 = IMU.Imu3DM_GX3_45("/dev/ttyACM6", True)
-micro_imu2.initialize()
-add_frame("2", vis)
+# micro_imu1 = IMU.Imu3DM_GX3_45("/dev/ttyACM1", True)
+# micro_imu1.initialize()
+# add_frame("1", vis)
+# micro_imu2 = IMU.Imu3DM_GX3_45("/dev/ttyACM6", True)
+# micro_imu2.initialize()
+# add_frame("2", vis)
 
 rooh_imu1 = BnoImu("/dev/ttyACM0")
 add_frame("3", vis)
 rooh_imu2 = BnoImu("/dev/ttyACM1")
-add_frame("4", vis)
+# add_frame("4", vis)
 
 
 while True:
-    iRb1 = (micro_imu1.get_rotation_matrix()).copy().T
-    update_frame("1", vis, iRb1, np.array([0.5, 0, 0]))
-    iRb2 = (micro_imu2.get_rotation_matrix()).copy().T
-    update_frame("2", vis, iRb2, np.array([0.5, 0, 0]))
+    # iRb1 = (micro_imu1.get_rotation_matrix()).copy()
+    # update_frame("1", vis, iRb1, np.array([0.5, 0, 0]))
+    # iRb2 = (micro_imu2.get_rotation_matrix()).copy().T
+    # update_frame("2", vis, iRb2, np.array([0.5, 0, 0]))
 
     time.sleep(0.01)
     try:
         iRbr1 = Rotation.from_quat(rooh_imu1.read()["q"]).as_matrix()
-        update_frame("3", vis, iRbr1)
         iRbr2 = Rotation.from_quat(rooh_imu2.read()["q"]).as_matrix()
-        update_frame("4", vis, iRbr2)
+        update_frame("3", vis, iRbr2.T @ iRbr1)
+        # update_frame("4", vis, iRbr2)
     except:
         print("missed signal")
     

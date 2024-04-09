@@ -22,9 +22,49 @@ class ExoSkeletonUDPInterface():
         self.rx_thread.start()
         self.state = None
         self.latest_state_stamp = time.time()
+        self.is_calibrated = 0
+        self.q_offsets = [0.]
 
-    def setCommand(self,q_des, dq_des, kp, kd, tau_ff, q_offsets):
-        assert self.num_actuators == len(q_des) == len(dq_des) == len(kp) == len(kd) == len(kd) == len(tau_ff), 'there should be one entry in all inputs per actuator'
+    def calibrate(self):
+        print("calibration ...")
+
+        self.sendCommand([0.], [0.], [0.], [0.0], [0.0], [0.0])
+        time.sleep(0.01)
+        time_check = 0
+        wait_time = 1.0
+
+        while self.is_calibrated == 0:
+            time.sleep(0.001)
+            state = self.getState()
+            if state is not None:
+                data = self.getState()
+                q_motor = data['motor_q']
+                dq_motor  = data['motor_dq']
+                # reset
+                torque = 1.0
+                self.sendCommand([0], [0.], [0], [0], [torque], [0.])
+                if dq_motor < 1e-2:
+                    time_check += 0.001
+                if time_check > wait_time:
+                    self.is_calibrated = 1
+                    self.q_offset = [q_motor,]
+                    print("setting offset ...")
+            else:
+                print('No response received from the leg. Check the network.')
+
+        print("finished calibration ...")
+        self.sendCommand([0], [0.], [0], [0], [0.0], self.q_offset)
+
+
+    def setCommand(self,q_des, dq_des, kp, kd, tau_ff):
+        if self.is_calibrated:
+            self.sendCommand(q_des, dq_des, kp, kd, tau_ff, self.q_offset)
+        else:
+            print("Please calibrate the robot before sending command ....")
+            self.sendCommand([0], [0.], [0], [0], [0.], [0.])
+
+    def sendCommand(self,q_des, dq_des, kp, kd, tau_ff, q_offsets):
+        assert self.num_actuators == len(q_des) == len(dq_des) == len(kp) == len(kd) == len(tau_ff) == len(q_offsets), 'there should be one entry in all inputs per actuator'
         msg_format=f'I{self.num_actuators*6}f'
         stamp = time.time()
         data = np.vstack([q_des, dq_des, kp, kd, tau_ff, q_offsets]).T.reshape(-1)
