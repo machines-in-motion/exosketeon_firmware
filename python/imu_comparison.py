@@ -7,7 +7,6 @@ import time
 from scipy.spatial.transform import Rotation
 from bno_imu import BnoImu
 
-vis = meshcat.Visualizer().open()
 
 def add_frame(name, vis):
     xbox = meshcat.geometry.Box([0.1, 0.01, 0.01])
@@ -47,25 +46,30 @@ def update_frame(name, vis, R, offset = np.zeros(3)):
 # micro_imu2.initialize()
 # add_frame("2", vis)
 
-rooh_imu1 = BnoImu("/dev/ttyACM0")
-add_frame("3", vis)
-rooh_imu2 = BnoImu("/dev/ttyACM1")
-# add_frame("4", vis)
+
+if __name__ == "__main__":
+
+    rooh_imu1 = BnoImu("/dev/ttyACM0")
+    # rooh_imu2 = BnoImu("/dev/ttyACM1")
+    # add_frame("4", vis)
+    # vis = meshcat.Visualizer().open()
+    # add_frame("3", vis)
 
 
-while True:
-    # iRb1 = (micro_imu1.get_rotation_matrix()).copy()
-    # update_frame("1", vis, iRb1, np.array([0.5, 0, 0]))
-    # iRb2 = (micro_imu2.get_rotation_matrix()).copy().T
-    # update_frame("2", vis, iRb2, np.array([0.5, 0, 0]))
+    while True:
+        # iRb1 = (micro_imu1.get_rotation_matrix()).copy()
+        # update_frame("1", vis, iRb1, np.array([0.5, 0, 0]))
+        # iRb2 = (micro_imu2.get_rotation_matrix()).copy().T
+        # update_frame("2", vis, iRb2, np.array([0.5, 0, 0]))
 
-    time.sleep(0.01)
-    try:
-        iRbr1 = Rotation.from_quat(rooh_imu1.read()["q"]).as_matrix()
-        iRbr2 = Rotation.from_quat(rooh_imu2.read()["q"]).as_matrix()
-        update_frame("3", vis, iRbr2.T @ iRbr1)
-        # update_frame("4", vis, iRbr2)
-    except:
-        print("missed signal")
+        time.sleep(0.01)
+        try:
+            iRbr1 = Rotation.from_quat(rooh_imu1.read()["q"]).as_matrix()
+            print(iRbr1)
+            # iRbr2 = Rotation.from_quat(rooh_imu2.read()["q"]).as_matrix()
+            # update_frame("3", vis, iRbr1)
+            # update_frame("4", vis, iRbr2)
+        except:
+            print("missed signal")
     
     

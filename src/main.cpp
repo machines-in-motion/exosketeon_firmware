@@ -7,6 +7,23 @@
 #include <NativeEthernet.h>
 #include <NativeEthernetUdp.h>
 
+#include <Wire.h>
+#include <SPI.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BNO055.h>
+#include <utility/imumaths.h>
+
+// TO be cleaned
+int counter = 0;
+
+
+// IMU 
+Adafruit_BNO055 bno_shoulder = Adafruit_BNO055(56, 0x28, &Wire);
+Adafruit_BNO055 bno_base = Adafruit_BNO055(55, 0x28, &Wire1);
+
+imu::Quaternion imu_shoulder_ori;
+imu::Quaternion imu_base_ori; 
+
 // Instantiate required objects:
 FlexCAN_T4<CAN2, RX_SIZE_256, TX_SIZE_16> Can2; // The CAN2 driver
 
@@ -61,13 +78,11 @@ void check_safety( const ActuatorState_t state){
 }
 
 const float compute_exoskeleton_joint_angle(const float motor_angle){
-  return forward_kinematics[0]*std::pow(motor_angle,5) + forward_kinematics[1]*std::pow(motor_angle,4) + forward_kinematics[2]*std::pow(motor_angle,3) 
-          + forward_kinematics[3]*std::pow(motor_angle,2) + forward_kinematics[4]*std::pow(motor_angle,1) + forward_kinematics[5];
+  return forward_kinematics[0]*std::pow(motor_angle,2) + forward_kinematics[1]*std::pow(motor_angle,1) + forward_kinematics[2];
 }
 
 const float compute_exoskeleton_joint_velocity(const float motor_angle, const float motor_velocity){
-  return (jacobian[0]*std::pow(motor_angle,4) + jacobian[1]*std::pow(motor_angle,3) + jacobian[2]*std::pow(motor_angle,2) 
-          + jacobian[3]*std::pow(motor_angle,1) + jacobian[4])*motor_velocity;
+  return (jacobian[0]*std::pow(motor_angle,1) + jacobian[1])*motor_velocity;
 }
 
 // callback that runs priodically every 1ms 
@@ -75,10 +90,30 @@ void daqLoopCallback(void)
 {
   const ActuatorState_t state = actuator_manager.getLatestState(KNEE_ACTUATOR_ID);
   const JointCmd_t cmd = shm_cmd.data[KNEE_ACTUATOR_IDX];
+  //updating the imu state at 100 ms
+  if (counter > 10){
+
+    imu_shoulder_ori = bno_shoulder.getQuat();
+    imu_base_ori = bno_base.getQuat();
+    counter = 0;
+  }
+
   shm_state.data[KNEE_ACTUATOR_IDX].motor_q = state.q - cmd.q_offset;
   shm_state.data[KNEE_ACTUATOR_IDX].motor_dq = state.dq;
   shm_state.data[KNEE_ACTUATOR_IDX].q = compute_exoskeleton_joint_angle(shm_state.data[KNEE_ACTUATOR_IDX].motor_q);
   shm_state.data[KNEE_ACTUATOR_IDX].dq = compute_exoskeleton_joint_velocity(shm_state.data[KNEE_ACTUATOR_IDX].motor_q, shm_state.data[KNEE_ACTUATOR_IDX].motor_dq);
+  
+  
+  shm_state.data[KNEE_ACTUATOR_IDX].shoulder_ori[0]=imu_shoulder_ori.x();
+  shm_state.data[KNEE_ACTUATOR_IDX].shoulder_ori[1]=imu_shoulder_ori.y();
+  shm_state.data[KNEE_ACTUATOR_IDX].shoulder_ori[2]=imu_shoulder_ori.z();
+  shm_state.data[KNEE_ACTUATOR_IDX].shoulder_ori[3]=imu_shoulder_ori.w();
+
+  shm_state.data[KNEE_ACTUATOR_IDX].base_ori[0]=imu_base_ori.x();
+  shm_state.data[KNEE_ACTUATOR_IDX].base_ori[1]=imu_base_ori.y();
+  shm_state.data[KNEE_ACTUATOR_IDX].base_ori[2]=imu_base_ori.z();
+  shm_state.data[KNEE_ACTUATOR_IDX].base_ori[3]=imu_base_ori.w();
+
   check_safety(state);
   // compute the internal PD
   switch(actuator_mode){
@@ -99,6 +134,8 @@ void daqLoopCallback(void)
   }
   shm_updated = 1;
   Can2.events();
+  counter += 1;
+
 }
 
 float readJointStates(ActuatorState_t state)
@@ -149,6 +186,22 @@ void setup() {
   Udp.begin(localPort);
   actuator_mode = 1;
   Serial.println("motor is ready.");
+
+  // Start IMU
+  if (!bno_base.begin())
+  {
+    /* There was a problem detecting the BNO055 ... check your connections */
+    Serial.print("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!");
+    while (1);
+  }
+  delay(1000);
+  if (!bno_shoulder.begin())
+  {
+    /* There was a problem detecting the BNO055 ... check your connections */
+    Serial.print("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!");
+    while (1);
+  }
+  delay(1000);
 }
 
 uint8_t udp_cmd_buffer[128];

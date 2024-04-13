@@ -8,8 +8,8 @@
 
 #define KNEE_ACTUATOR_IDX 0
 #define MAX_MOTOR_TORQUE 6.0 // max torque in the motor
-#define MAX_JOINT_LIMIT 1.6 //0 // max angle in the motor
-#define MIN_JOINT_LIMIT -1.6 // min angle in the motor
+#define MAX_JOINT_LIMIT 1.8 //0 // max angle in the motor
+#define MIN_JOINT_LIMIT -1.8 // min angle in the motor
 
 
 #define CONTROL_FREQUENCY 1000
@@ -31,7 +31,7 @@ enum motor_mode {
   ACTIVE_MODE = 1
 };
 
-const float forward_kinematics[6] = {5.16039797, 17.20853557, 20.02039048, 9.07187824, 2.124709, 1.69513506};
-const float jacobian[5] = {5*5.16039797, 4*17.20853557, 3*20.02039048, 2*9.07187824, 2.124709};
+const float forward_kinematics[3] = {-0.16600942,  0.73458596,  1.78947858};
+const float jacobian[2] = {2*-0.16600942,  0.73458596};
 
 #endif

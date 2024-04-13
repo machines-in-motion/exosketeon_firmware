@@ -12,6 +12,7 @@ class ExoSkeletonUDPInterface():
                        host_ip='192.168.123.1', host_port=5000,
                        num_actuators=1):
         self.num_actuators= num_actuators
+        self.num_imus = 2
         self.leg_ip = leg_ip
         self.leg_port = leg_port
         self.socket=socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
@@ -41,7 +42,7 @@ class ExoSkeletonUDPInterface():
                 q_motor = data['motor_q']
                 dq_motor  = data['motor_dq']
                 # reset
-                torque = 1.0
+                torque = 2.0
                 self.sendCommand([0], [0.], [0], [0], [torque], [0.])
                 if dq_motor < 1e-2:
                     time_check += 0.001
@@ -85,15 +86,17 @@ class ExoSkeletonUDPInterface():
             data = self.socket.recvmsg(4096)
             # breakpoint()
             if data[0][0] == MOTION_STATE:
-                msg_format=f'{self.num_actuators*6}f'
+                msg_format=f'{self.num_actuators*(6) + 4*self.num_imus}f'
                 data = struct.unpack(msg_format, data[0][1:])
-                state = np.array(data).reshape(self.num_actuators, 6)  
+                state = np.array(data).reshape(self.num_actuators, 6 + 4*self.num_imus)  
                 self.state={'q': state[:,0],
                             'dq': state[:,1],
                             'current': state[:,2],
                             'temp': state[:,3],
                             'motor_q': state[:,4],
-                            'motor_dq': state[:,5]}
+                            'motor_dq': state[:,5],
+                            'base_ori': state[:,6:10],
+                            'shoulder_ori': state[:,10:14]}
                 self.latest_state_stamp = time.time()
             else:
                 print("invalid motion response")

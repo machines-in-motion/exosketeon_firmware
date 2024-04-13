@@ -20,24 +20,9 @@ struct JointState
     float temp;
     float motor_q;
     float motor_dq;
+    float base_ori[4];
+    float shoulder_ori[4];
 };
-
-
-union{
-  struct{
-    float q[4];
-    float accel[3];
-    float gyro[3];
-    float mag[3];
-    float gravity[3];
-    uint8_t h1;
-    uint8_t h2;
-    uint8_t h3;
-    uint8_t h4;
-  }data;
-  uint8_t buffer[16*4+4];
-}packet;
-
 
 typedef struct JointCmd JointCmd_t;
 typedef struct JointState JointState_t;
