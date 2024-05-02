@@ -12,6 +12,7 @@
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BNO055.h>
 #include <utility/imumaths.h>
+#include <EEPROM.h>
 
 // TO be cleaned
 int counter = 0;
@@ -20,9 +21,11 @@ int counter = 0;
 // IMU 
 Adafruit_BNO055 bno_shoulder = Adafruit_BNO055(56, 0x28, &Wire);
 Adafruit_BNO055 bno_base = Adafruit_BNO055(55, 0x28, &Wire1);
+Adafruit_BNO055 bno_wrist = Adafruit_BNO055(55, 0x28, &Wire2);
 
 imu::Quaternion imu_shoulder_ori;
 imu::Quaternion imu_base_ori; 
+imu::Quaternion imu_wrist_ori; 
 
 // Instantiate required objects:
 FlexCAN_T4<CAN2, RX_SIZE_256, TX_SIZE_16> Can2; // The CAN2 driver
@@ -90,11 +93,65 @@ void daqLoopCallback(void)
 {
   const ActuatorState_t state = actuator_manager.getLatestState(KNEE_ACTUATOR_ID);
   const JointCmd_t cmd = shm_cmd.data[KNEE_ACTUATOR_IDX];
+  
   //updating the imu state at 100 ms
-  if (counter > 10){
+  if (counter > (CONTROL_FREQUENCY/BNO055_SAMPLERATE_DELAY_MS)){
 
-    imu_shoulder_ori = bno_shoulder.getQuat();
-    imu_base_ori = bno_base.getQuat();
+    if(bno_shoulder.getQuat().magnitude() > 1e-6){
+      imu_shoulder_ori = bno_shoulder.getQuat();
+      // imu_shoulder_ori.normalize();
+    }
+
+    if(bno_base.getQuat().magnitude() > 1e-6){
+      imu_base_ori = bno_base.getQuat();
+      // imu_base_ori.normalize();
+    }
+    if(bno_wrist.getQuat().magnitude() > 1e-6){
+      imu_wrist_ori = bno_wrist.getQuat();
+      // imu_wrist_ori.normalize();
+    }
+
+    Serial.println("BASE IMU");
+    uint8_t system, gyro, accel, mag;
+    system = gyro = accel = mag = 0;
+    bno_base.getCalibration(&system, &gyro, &accel, &mag);
+
+    /* Display the individual values */
+    Serial.print("Sys:");
+    Serial.print(system, DEC);
+    Serial.print(" G:");
+    Serial.print(gyro, DEC);
+    Serial.print(" M:");
+    Serial.print(mag, DEC);
+    Serial.println("");
+
+    Serial.println("SHUOLDER IMU");
+    system = gyro = accel = mag = 0;
+    bno_shoulder.getCalibration(&system, &gyro, &accel, &mag);
+
+    /* Display the individual values */
+    Serial.print("Sys:");
+    Serial.print(system, DEC);
+    Serial.print(" G:");
+    Serial.print(gyro, DEC);
+    Serial.print(" M:");
+    Serial.print(mag, DEC);
+    Serial.println("");
+
+    Serial.println("WRIST IMU");
+    system = gyro = accel = mag = 0;
+    bno_wrist.getCalibration(&system, &gyro, &accel, &mag);
+
+    /* Display the individual values */
+    Serial.print("Sys:");
+    Serial.print(system, DEC);
+    Serial.print(" G:");
+    Serial.print(gyro, DEC);
+    Serial.print(" M:");
+    Serial.print(mag, DEC);
+    Serial.println("");
+
+
     counter = 0;
   }
 
@@ -113,6 +170,11 @@ void daqLoopCallback(void)
   shm_state.data[KNEE_ACTUATOR_IDX].base_ori[1]=imu_base_ori.y();
   shm_state.data[KNEE_ACTUATOR_IDX].base_ori[2]=imu_base_ori.z();
   shm_state.data[KNEE_ACTUATOR_IDX].base_ori[3]=imu_base_ori.w();
+
+  shm_state.data[KNEE_ACTUATOR_IDX].wrist_ori[0]=imu_wrist_ori.x();
+  shm_state.data[KNEE_ACTUATOR_IDX].wrist_ori[1]=imu_wrist_ori.y();
+  shm_state.data[KNEE_ACTUATOR_IDX].wrist_ori[2]=imu_wrist_ori.z();
+  shm_state.data[KNEE_ACTUATOR_IDX].wrist_ori[3]=imu_wrist_ori.w();
 
   check_safety(state);
   // compute the internal PD
@@ -161,6 +223,9 @@ void setup() {
   Serial.begin(115200);
   Serial.println("starting setup.");
 
+  Serial2.begin(115200);
+  while (!Serial2) delay(10);  // wait for serial port to open!
+
   // Enable the CAN2 bus with interrupt 
   Can2.begin();
   Can2.setBaudRate(1000000);
@@ -172,9 +237,6 @@ void setup() {
   // Add the knee actuator to the actuator manager
   actuator_manager.registerActuator(KNEE_ACTUATOR_ID);
   
-  // shm periodic timer (1000us)
-  daqLoopCallbackTimer.begin(daqLoopCallback, CONTROL_FREQUENCY); // 1000Hz Callback
-
   // start the Ethernet
   Ethernet.begin(mac_address, ip);
 
@@ -191,29 +253,44 @@ void setup() {
   if (!bno_base.begin())
   {
     /* There was a problem detecting the BNO055 ... check your connections */
-    Serial.print("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!");
+    Serial.print("Ooops, no BNO055 base detected ... Check your wiring or I2C ADDR!");
     while (1);
   }
+  // bno_base.setExtCrystalUse(true);
+  bno_base.setMode(OPERATION_MODE_MAGGYRO);
   delay(1000);
+
   if (!bno_shoulder.begin())
   {
     /* There was a problem detecting the BNO055 ... check your connections */
-    Serial.print("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!");
+    Serial.print("Ooops, no BNO055 shoulder detected ... Check your wiring or I2C ADDR!");
     while (1);
   }
+  // bno_shoulder.setExtCrystalUse(true);
+  bno_shoulder.setMode(OPERATION_MODE_MAGGYRO);
   delay(1000);
+
+  if (!bno_wrist.begin())
+  {
+    /* There was a problem detecting the BNO055 ... check your connections */
+    Serial.print("Ooops, no BNO055 shoulder detected ... Check your wiring or I2C ADDR!");
+    while (1);
+  }
+  // bno_wrist.setExtCrystalUse(true);
+  bno_wrist.setMode(OPERATION_MODE_MAGGYRO);
+  delay(1000);
+
+  // shm periodic timer (1000us)  
+  daqLoopCallbackTimer.begin(daqLoopCallback, CONTROL_FREQUENCY); // 1000Hz Callback
+
 }
 
 uint8_t udp_cmd_buffer[128];
+int incomingByte = 0;
 void loop() {
   int packetSize = Udp.parsePacket();
   if (packetSize) {
     Udp.read(udp_cmd_buffer, packetSize);
-    for(unsigned i = 0; i < packetSize; i++){
-      Serial.print(udp_cmd_buffer[i]); Serial.print(" ; ");
-    }
-    Serial.println();
-
     switch(udp_cmd_buffer[0])
     {
       case MOTION_CMD:
@@ -230,6 +307,7 @@ void loop() {
         break;
       }
     }
+
 }
 
 

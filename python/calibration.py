@@ -13,7 +13,7 @@ while True:
     time.sleep(0.001)
     state = interface.getState()
     # print(state["motor_q"], state["q"])
-    print(state["shoulder_ori"], state["base_ori"])
+    print(state["wrist_ori"], state["shoulder_ori"], state["base_ori"])
 
 flag = 1
 time_check = 0

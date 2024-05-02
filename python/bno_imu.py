@@ -16,12 +16,15 @@ class BnoImu:
     def update(self):
         while self.running:
             data = self.serial.read_until(b'abc\n')
-            data = struct.unpack('16f',data[:-4])
-            self.state = {'q':data[0:4],
-                          'acce':data[4:7],
-                          'gyro':data[7:10],
-                          'mag':data[10:13],
-                          'gravity':data[13:16]}
+            # print(data)
+            if(len(data) == 69):
+                data = struct.unpack('16f' + 'c',data[:-4])
+                self.state = {'q':data[0:4],
+                            'acce':data[4:7],
+                            'gyro':data[7:10],
+                            'mag':data[10:13],
+                            'gravity':data[13:16],
+                            'quat_accuracy': int.from_bytes(data[16], byteorder='big')}
             
     def read(self):
         return self.state
@@ -29,3 +32,5 @@ class BnoImu:
     def close(self):
         self.running=False
         self.serial.close()
+
+

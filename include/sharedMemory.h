@@ -22,6 +22,8 @@ struct JointState
     float motor_dq;
     float base_ori[4];
     float shoulder_ori[4];
+    float wrist_ori[4];
+
 };
 
 typedef struct JointCmd JointCmd_t;

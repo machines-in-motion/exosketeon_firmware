@@ -49,11 +49,12 @@ def update_frame(name, vis, R, offset = np.zeros(3)):
 
 if __name__ == "__main__":
 
-    rooh_imu1 = BnoImu("/dev/ttyACM0")
-    # rooh_imu2 = BnoImu("/dev/ttyACM1")
-    # add_frame("4", vis)
-    # vis = meshcat.Visualizer().open()
-    # add_frame("3", vis)
+    vis = meshcat.Visualizer()
+    rooh_imu1 = BnoImu("/dev/ttyACM1")
+    rooh_imu2 = BnoImu("/dev/ttyACM2")
+    vis = meshcat.Visualizer().open()
+    add_frame("3", vis)
+    add_frame("4", vis)
 
 
     while True:
@@ -65,10 +66,10 @@ if __name__ == "__main__":
         time.sleep(0.01)
         try:
             iRbr1 = Rotation.from_quat(rooh_imu1.read()["q"]).as_matrix()
-            print(iRbr1)
-            # iRbr2 = Rotation.from_quat(rooh_imu2.read()["q"]).as_matrix()
-            # update_frame("3", vis, iRbr1)
-            # update_frame("4", vis, iRbr2)
+            iRbr2 = Rotation.from_quat(rooh_imu2.read()["q"]).as_matrix()
+            print(rooh_imu2.read()["quat_accuracy"], rooh_imu1.read()["quat_accuracy"])
+            update_frame("3", vis, iRbr1)
+            update_frame("4", vis, iRbr2)
         except:
             print("missed signal")
     

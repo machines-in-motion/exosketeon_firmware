@@ -14,6 +14,7 @@
 
 #define CONTROL_FREQUENCY 1000
 #define SAFETY_COUNTER_LIMIT 100 // max number of times a message is missed before which safety controller is called
+#define BNO055_SAMPLERATE_DELAY_MS 100
 
 // A Mac address to be used for the leg.
 byte mac_address[] = {
