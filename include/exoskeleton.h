@@ -46,7 +46,6 @@ void check_safety( const ActuatorState_t state){
 
 // callback to process the responses from the actuators on the CAN2 bus
 void ActuatorCanSniff(const CAN_message_t &msg) {
-  Serial.println("yes");
   actuator_manager.decodeResponse(msg);
 }
 
@@ -66,60 +65,60 @@ void IMUCanSniff(const CAN_message_t &msg) {
   imu_hand.process_response(msg);
   imu_hand.update_shm(shm_state_t.data.quaternion_hand, shm_state_t.data.hand_quality);
 
-  Serial.println("IMU_BASE");
-  Serial.print(shm_state_t.data.quaternion_base[0], 2);
-  Serial.print(F(","));
-  Serial.print(shm_state_t.data.quaternion_base[1], 2);
-  Serial.print(F(","));
-  Serial.print(shm_state_t.data.quaternion_base[2], 2);
-  Serial.print(F(","));
-  Serial.print(shm_state_t.data.quaternion_base[3], 2);
-  Serial.print(F(","));
-  float norm = 0;
-  for(unsigned i =0; i < 4; ++i){
-    norm +=  imu_base.quat[i]*imu_base.quat[i];
-  };
-  Serial.print(sqrt(norm));
-  Serial.print(F(","));
-  Serial.print(shm_state_t.data.base_quality);
-  Serial.print(F(","));
-  Serial.println();
+  // Serial.println("IMU_BASE");
+  // Serial.print(shm_state_t.data.quaternion_base[0], 2);
+  // Serial.print(F(","));
+  // Serial.print(shm_state_t.data.quaternion_base[1], 2);
+  // Serial.print(F(","));
+  // Serial.print(shm_state_t.data.quaternion_base[2], 2);
+  // Serial.print(F(","));
+  // Serial.print(shm_state_t.data.quaternion_base[3], 2);
+  // Serial.print(F(","));
+  // float norm = 0;
+  // for(unsigned i =0; i < 4; ++i){
+  //   norm +=  imu_base.quat[i]*imu_base.quat[i];
+  // };
+  // Serial.print(sqrt(norm));
+  // Serial.print(F(","));
+  // Serial.print(shm_state_t.data.base_quality);
+  // Serial.print(F(","));
+  // Serial.println();
 
-  Serial.println("IMU_SHOULDER");
-  Serial.print(imu_shoulder.quat[0], 2);
-  Serial.print(F(","));
-  Serial.print(imu_shoulder.quat[1], 2);
-  Serial.print(F(","));
-  Serial.print(imu_shoulder.quat[2], 2);
-  Serial.print(F(","));
-  Serial.print(imu_shoulder.quat[3], 2);
-  Serial.print(F(","));
-  norm = 0;
-  for(unsigned i =0; i < 4; ++i){
-    norm += imu_shoulder.quat[i]*imu_shoulder.quat[i];
-  };
-  Serial.print(sqrt(norm));
-  Serial.print(F(","));
-  Serial.print(shm_state_t.data.shoulder_quality);
-  Serial.print(F(","));
-  Serial.println();
+  // Serial.println("IMU_SHOULDER");
+  // Serial.print(imu_shoulder.quat[0], 2);
+  // Serial.print(F(","));
+  // Serial.print(imu_shoulder.quat[1], 2);
+  // Serial.print(F(","));
+  // Serial.print(imu_shoulder.quat[2], 2);
+  // Serial.print(F(","));
+  // Serial.print(imu_shoulder.quat[3], 2);
+  // Serial.print(F(","));
+  // norm = 0;
+  // for(unsigned i =0; i < 4; ++i){
+  //   norm += imu_shoulder.quat[i]*imu_shoulder.quat[i];
+  // };
+  // Serial.print(sqrt(norm));
+  // Serial.print(F(","));
+  // Serial.print(shm_state_t.data.shoulder_quality);
+  // Serial.print(F(","));
+  // Serial.println();
 
-  Serial.println("IMU_HAND");
-  Serial.print(imu_hand.quat[0], 2);
-  Serial.print(F(","));
-  Serial.print(imu_hand.quat[1], 2);
-  Serial.print(F(","));
-  Serial.print(imu_hand.quat[2], 2);
-  Serial.print(F(","));
-  Serial.print(imu_hand.quat[3], 2);
-  Serial.print(F(","));
-  norm = 0;
-  for(unsigned i =0; i < 4; ++i){
-    norm +=  imu_hand.quat[i]*imu_hand.quat[i];
-  };
-  Serial.print(sqrt(norm));
-  Serial.print(F(","));
-  Serial.print(shm_state_t.data.hand_quality);
-  Serial.print(F(","));
-  Serial.println();
+  // Serial.println("IMU_HAND");
+  // Serial.print(imu_hand.quat[0], 2);
+  // Serial.print(F(","));
+  // Serial.print(imu_hand.quat[1], 2);
+  // Serial.print(F(","));
+  // Serial.print(imu_hand.quat[2], 2);
+  // Serial.print(F(","));
+  // Serial.print(imu_hand.quat[3], 2);
+  // Serial.print(F(","));
+  // norm = 0;
+  // for(unsigned i =0; i < 4; ++i){
+  //   norm +=  imu_hand.quat[i]*imu_hand.quat[i];
+  // };
+  // Serial.print(sqrt(norm));
+  // Serial.print(F(","));
+  // Serial.print(shm_state_t.data.hand_quality);
+  // Serial.print(F(","));
+  // Serial.println();
 }

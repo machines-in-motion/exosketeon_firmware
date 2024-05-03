@@ -36,7 +36,6 @@ void daqLoopCallback(void)
   shm_state_t.data.motor_dq = state.dq;
   shm_state_t.data.q = compute_exoskeleton_joint_angle(shm_state_t.data.motor_q);
   shm_state_t.data.dq = compute_exoskeleton_joint_velocity(shm_state_t.data.motor_q, shm_state_t.data.motor_dq);
-
   check_safety(state);
   // compute the internal PD
   switch(actuator_mode){
@@ -44,19 +43,17 @@ void daqLoopCallback(void)
     {
       double u = computePD(shm_cmd_t.data[KNEE_ACTUATOR_IDX], shm_state_t.data);
       auto msg = actuator_manager.command2Message(KNEE_ACTUATOR_ID, u);
-      Can2.write(msg);
+      Can1.write(msg);
       break;
     }
     case SAFETY_MODE:
     {
       double u = computeDampingCommand(shm_state_t.data, MOTOR_DAMPING_CONSTANT);
       auto msg = actuator_manager.command2Message(KNEE_ACTUATOR_ID, u);
-      Can2.write(msg);
+      Can1.write(msg);
       break;
     }
   }
-
-  Can1.events();
 
 }
 
@@ -122,11 +119,12 @@ void setup() {
 
 }
 
-uint8_t udp_cmd_buffer[128];
+uint8_t udp_cmd_buffer[256];
 int incomingByte = 0;
 void loop() {
   int packetSize = Udp.parsePacket();
   if (packetSize) {
+    Serial.print("packet rechieved");
     Udp.read(udp_cmd_buffer, packetSize);
     switch(udp_cmd_buffer[0])
     {
@@ -145,6 +143,7 @@ void loop() {
       }
     }
 
+  Can1.events();
   Can2.events();
   delayMicroseconds(100);
 

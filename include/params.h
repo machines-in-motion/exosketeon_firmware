@@ -3,7 +3,7 @@
 #include <NativeEthernet.h>
 #include <NativeEthernetUdp.h>
 
-#define KNEE_ACTUATOR_ID 0x123
+#define KNEE_ACTUATOR_ID 0x124
 #define MOTOR_DAMPING_CONSTANT 0.1
 
 #define KNEE_ACTUATOR_IDX 0
