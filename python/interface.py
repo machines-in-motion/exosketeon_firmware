@@ -23,38 +23,38 @@ class ExoSkeletonUDPInterface():
         self.rx_thread.start()
         self.state = None
         self.latest_state_stamp = time.time()
-        self.is_calibrated = 0
+        self.is_calibrated = 1
         self.q_offsets = [0.]
 
-    def calibrate(self):
-        print("calibration ...")
+    # def calibrate(self):
+    #     print("calibration ...")
 
-        self.sendCommand([0.], [0.], [0.], [0.0], [0.0], [0.0])
-        time.sleep(0.01)
-        time_check = 0
-        wait_time = 1.0
+    #     self.sendCommand([0.], [0.], [0.], [0.0], [0.0], [0.0])
+    #     time.sleep(0.01)
+    #     time_check = 0
+    #     wait_time = 1.0
 
-        while self.is_calibrated == 0:
-            time.sleep(0.001)
-            state = self.getState()
-            if state is not None:
-                data = self.getState()
-                q_motor = data['motor_q']
-                dq_motor  = data['motor_dq']
-                # reset
-                torque = 2.0
-                self.sendCommand([0], [0.], [0], [0], [torque], [0.])
-                if dq_motor < 1e-2:
-                    time_check += 0.001
-                if time_check > wait_time:
-                    self.is_calibrated = 1
-                    self.q_offset = [q_motor,]
-                    print("setting offset ...")
-            else:
-                print('No response received from the leg. Check the network.')
+    #     while self.is_calibrated == 0:
+    #         time.sleep(0.001)
+    #         state = self.getState()
+    #         if state is not None:
+    #             data = self.getState()
+    #             q_motor = data['motor_q']
+    #             dq_motor  = data['motor_dq']
+    #             # reset
+    #             torque = 2.0
+    #             self.sendCommand([0], [0.], [0], [0], [torque], [0.])
+    #             if dq_motor < 1e-2:
+    #                 time_check += 0.001
+    #             if time_check > wait_time:
+    #                 self.is_calibrated = 1
+    #                 self.q_offset = [q_motor,]
+    #                 print("setting offset ...")
+    #         else:
+    #             print('No response received from the leg. Check the network.')
 
-        print("finished calibration ...")
-        self.sendCommand([0], [0.], [0], [0], [0.0], self.q_offset)
+    #     print("finished calibration ...")
+    #     self.sendCommand([0], [0.], [0], [0], [0.0], self.q_offset)
 
 
     def setCommand(self,q_des, dq_des, kp, kd, tau_ff):
@@ -86,18 +86,17 @@ class ExoSkeletonUDPInterface():
             data = self.socket.recvmsg(4096)
             # breakpoint()
             if data[0][0] == MOTION_STATE:
-                msg_format=f'{self.num_actuators*(6) + 4*self.num_imus}f'
+                msg_format=f'{self.num_actuators*(4) + 4*(self.num_imus+1)}f'
                 data = struct.unpack(msg_format, data[0][1:])
-                state = np.array(data).reshape(self.num_actuators, 6 + 4*self.num_imus)  
+                print(data)
+                state = np.array(data).reshape(self.num_actuators, 4 + 4*(self.num_imus+1))  
                 self.state={'q': state[:,0],
                             'dq': state[:,1],
-                            'current': state[:,2],
-                            'temp': state[:,3],
-                            'motor_q': state[:,4],
-                            'motor_dq': state[:,5],
-                            'base_ori': state[:,6:10],
-                            'shoulder_ori': state[:,10:14],
-                            'wrist_ori': state[:,14:18]}
+                            'motor_q': state[:,2],
+                            'motor_dq': state[:,3],
+                            'base_ori': state[:,4:8],
+                            'shoulder_ori': state[:,8:12],
+                            'wrist_ori': state[:,12:16]}
                 self.latest_state_stamp = time.time()
             else:
                 print("invalid motion response")

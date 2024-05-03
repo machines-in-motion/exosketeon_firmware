@@ -14,32 +14,31 @@ struct JointCmd
 
 struct JointState
 {
+    //motor related data
     float q;
     float dq;
-    float tau_est;
-    float temp;
     float motor_q;
     float motor_dq;
-    float base_ori[4];
-    float shoulder_ori[4];
-    float wrist_ori[4];
-
+    // imu related data
+    float quaternion_base[4];
+    float quaternion_shoulder[4];
+    float quaternion_hand[4];
+    float base_quality;
+    float shoulder_quality;
+    float hand_quality;
 };
 
-typedef struct JointCmd JointCmd_t;
-typedef struct JointState JointState_t;
+union shm_cmd{
+ JointCmd data[NUM_ACTUATORS];
+ unsigned char buffer[NUM_ACTUATORS*sizeof(JointCmd)];
+};
 
-typedef struct SharedMemory SharedMemory_t;
+union shm_state{
+ JointState data;
+ unsigned char buffer[sizeof(JointState)];
+};
 
-
-union{
- JointCmd_t data[NUM_ACTUATORS];
- unsigned char buffer[NUM_ACTUATORS*sizeof(JointCmd_t)];
-}shm_cmd;
-
-union{
- JointState_t data[NUM_ACTUATORS];
- unsigned char buffer[NUM_ACTUATORS*sizeof(JointState_t)];
-}shm_state;
+shm_cmd shm_cmd_t;
+shm_state shm_state_t;
 
 #endif

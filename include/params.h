@@ -14,7 +14,16 @@
 
 #define CONTROL_FREQUENCY 1000
 #define SAFETY_COUNTER_LIMIT 100 // max number of times a message is missed before which safety controller is called
-#define BNO055_SAMPLERATE_DELAY_MS 100
+
+// IMU details
+#define CAN_QUAT_ADDRESS   0x0
+#define CAN_STATUS_ADDRESS 0x1
+#define uint_range 32768.0
+
+#define IMU_HAND_ADDRESS 0x120
+#define IMU_BASE_ADDRESS 0x122
+#define IMU_SHOULDER_ADDRESS 0x121
+
 
 // A Mac address to be used for the leg.
 byte mac_address[] = {
