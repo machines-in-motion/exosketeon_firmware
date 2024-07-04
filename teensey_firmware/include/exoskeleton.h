@@ -30,6 +30,11 @@ const float compute_exoskeleton_joint_velocity(const float motor_angle, const fl
   return (jacobian[0]*std::pow(motor_angle,1) + jacobian[1])*motor_velocity;
 }
 
+const float compute_exoskeleton_motor_torque(const float motor_angle, const float joint_torque){
+  return (jacobian[0]*std::pow(motor_angle,1) + jacobian[1])*joint_torque;
+}
+
+
 void check_safety( const ActuatorState_t state){
   // if((millis() - latest_cmd_stamp) > SAFETY_COUNTER_LIMIT){
   //   actuator_mode = 0;

@@ -41,7 +41,7 @@ enum motor_mode {
   ACTIVE_MODE = 1
 };
 
-const float forward_kinematics[3] = {-0.16600942,  0.73458596,  1.78947858};
-const float jacobian[2] = {2*-0.16600942,  0.73458596};
+const float forward_kinematics[3] = {0.16600942,  -0.73458596,  -1.78947858}; //{-0.16600942,  0.73458596,  1.78947858};
+const float jacobian[2] = {2*0.16600942,  -0.73458596}; //{2*-0.16600942,  0.73458596};
 
 #endif

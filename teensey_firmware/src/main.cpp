@@ -12,11 +12,11 @@
 
 float computePD(const JointCmd cmd, const JointState state)
 {
-  float kp = cmd.kp; float kv = cmd.kv;
-  float q_des = cmd.q_des; float dq_des = cmd.dq_des;
-
   // compute the contrl law (note that the unit of u is in amps)
-  double u = kp*(q_des  - state.motor_q) + kv*(dq_des - state.motor_dq) + cmd.tau_ff;
+  // double u = compute_exoskeleton_motor_torque(state.motor_q, cmd.tau_ff);
+  double u = cmd.tau_ff;
+  // Serial.println(u);
+  Serial.println(cmd.tau_ff);
   u = std::max(-MAX_MOTOR_TORQUE, std::min(u, MAX_MOTOR_TORQUE));
   return u;
 }
@@ -36,7 +36,7 @@ void daqLoopCallback(void)
   shm_state_t.data.motor_dq = state.dq;
   shm_state_t.data.q = compute_exoskeleton_joint_angle(shm_state_t.data.motor_q);
   shm_state_t.data.dq = compute_exoskeleton_joint_velocity(shm_state_t.data.motor_q, shm_state_t.data.motor_dq);
-  check_safety(state);
+  // check_safety(state);
   // compute the internal PD
   switch(actuator_mode){
     case ACTIVE_MODE:
